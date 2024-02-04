@@ -11,12 +11,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TCPServer {
+
   private final ServerSocket socket;
   private final ExecutorService executor;
   private final TCPConnectionHandler handler;
   private final TCPServerOptions options;
 
-  public TCPServer(ServerSocket socket, TCPServerOptions options,
+  private TCPServer(ServerSocket socket, TCPServerOptions options,
       TCPConnectionHandler connectionHandler) {
     this.options = options;
     this.executor = createThreadPool();
@@ -24,14 +25,17 @@ public class TCPServer {
     this.handler = connectionHandler;
   }
 
-  private ExecutorService createThreadPool() {
-    return Executors.newCachedThreadPool(TCPServerThreadFactory.getInstance());
+  public static TCPServer create(int port, TCPServerOptions options, TCPConnectionHandler handler) {
+    try {
+      return new TCPServer(ServerSocketFactory.getDefault().createServerSocket(port), options,
+          handler);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  public static TCPServer create(int port, TCPServerOptions options, TCPConnectionHandler handler)
-      throws IOException {
-    return new TCPServer(ServerSocketFactory.getDefault().createServerSocket(port), options,
-        handler);
+  private ExecutorService createThreadPool() {
+    return Executors.newCachedThreadPool(TCPServerThreadFactory.getInstance());
   }
 
   public void listen() throws IOException, InterruptedException {
@@ -39,15 +43,25 @@ public class TCPServer {
 
     while (!socket.isClosed()) {
       semaphore.acquire();
-      Socket clientSocket = socket.accept();
 
+      Socket clientSocket = socket.accept();
       executor.submit(() -> {
         try {
           handler.handle(clientSocket);
         } catch (Exception e) {
           log.error("Exception in client socket handler", e);
+        } finally {
+          close(clientSocket);
         }
       });
+    }
+  }
+
+  private void close(Socket socket) {
+    try {
+      socket.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }

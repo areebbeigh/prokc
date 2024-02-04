@@ -29,7 +29,7 @@ allprojects {
       testImplementation("org.junit.jupiter:junit-jupiter")
       implementation("org.apache.logging.log4j:log4j-api")
       implementation("org.apache.logging.log4j:log4j-core")
-      implementation("org.apache.logging.log4j:log4j-slf4j-impl")
+      implementation("org.apache.logging.log4j:log4j-slf4j2-impl")
       implementation("org.slf4j:slf4j-api")
       compileOnly("org.projectlombok:lombok")
       annotationProcessor("org.projectlombok:lombok")
@@ -37,14 +37,17 @@ allprojects {
 
   dependencyManagement {
     dependencies {
-      dependency("com.athaydes.rawhttp:rawhttp-core:2.6.0")
-
       dependency("org.apache.logging.log4j:log4j-api:2.22.1")
       dependency("org.apache.logging.log4j:log4j-core:2.22.1")
-      dependency("org.apache.logging.log4j:log4j-slf4j-impl:2.22.1")
+      dependency("org.apache.logging.log4j:log4j-slf4j2-impl:2.22.1")
       dependency("org.slf4j:slf4j-api:2.0.11")
 
       dependency("org.projectlombok:lombok:1.18.30")
+
+      dependency("com.athaydes.rawhttp:rawhttp-core:2.6.0")
+
+      dependency("org.apache.commons:commons-lang3:3.14.0")
+      dependency("org.apache.commons:commons-collections4:4.4")
     }
   }
 
@@ -55,4 +58,5 @@ allprojects {
 
 dependencies {
   implementation("com.athaydes.rawhttp:rawhttp-core")
+  implementation(project(":proxy-core"))
 }
