@@ -1,18 +1,35 @@
 package com.areebbeigh;
 
-import com.areebbeigh.proxy.ClientHandler;
-import com.areebbeigh.proxy.Proxy;
-import com.areebbeigh.proxy.ProxyOptions;
-import com.areebbeigh.server.TCPServer;
-import com.areebbeigh.server.TCPServerOptions;
+import com.areebbeigh.prokc.proxy.client.ClientHandler;
+import com.areebbeigh.prokc.proxy.Proxy;
+import com.areebbeigh.prokc.proxy.ProxyOptions;
+import com.areebbeigh.prokc.proxy.remote.RemoteHandler;
+import com.areebbeigh.prokc.proxy.remote.SocketPoolFactory;
+import com.areebbeigh.prokc.proxy.scripts.BaseScript;
+import com.areebbeigh.prokc.server.TCPServer;
+import com.areebbeigh.prokc.server.TCPServerOptions;
 import java.io.IOException;
+import java.net.Socket;
+import java.net.URI;
+import java.util.List;
+import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+import rawhttp.core.RawHttp;
+import rawhttp.core.RawHttpRequest;
+import rawhttp.core.RawHttpResponse;
 
 public class Main {
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    ProxyOptions options = ProxyOptions.getDefault();
+    RawHttp rawHttp = new RawHttp();
+    GenericKeyedObjectPool<URI, Socket> connectionPool = new GenericKeyedObjectPool<>(
+        new SocketPoolFactory());
+    RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
+
+    ProxyOptions options = ProxyOptions.builder().scripts(List.of(new SampleScript())).build();
     TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(),
-        ClientHandler.create(options));
+        ClientHandler.create(options, remoteHandler, rawHttp));
     Proxy.create(server, options).start();
 
 //    ServerSocket serverSocket = new ServerSocket(7070);
@@ -38,5 +55,31 @@ public class Main {
 //        }
 //      }
 //    }
+  }
+
+  @Slf4j
+  static class SampleScript extends BaseScript {
+
+    @Override
+    public RawHttpRequest onRequest(RawHttpRequest request) {
+      log.info("Received request:\n{}", request.toString());
+      return request;
+    }
+
+    @Override
+    public RawHttpResponse<?> onResponse(RawHttpResponse<?> response) {
+      log.info("Received response:\n{}", response.toString());
+      return response;
+    }
+
+    @Override
+    public Pattern getPattern() {
+      return Pattern.compile(".*");
+    }
+
+    @Override
+    public String getName() {
+      return "Sample Script";
+    }
   }
 }

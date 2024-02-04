@@ -48,6 +48,7 @@ allprojects {
 
       dependency("org.apache.commons:commons-lang3:3.14.0")
       dependency("org.apache.commons:commons-collections4:4.4")
+      dependency("org.apache.commons:commons-pool2:2.12.0")
     }
   }
 
@@ -58,5 +59,6 @@ allprojects {
 
 dependencies {
   implementation("com.athaydes.rawhttp:rawhttp-core")
+  implementation("org.apache.commons:commons-pool2")
   implementation(project(":proxy-core"))
 }

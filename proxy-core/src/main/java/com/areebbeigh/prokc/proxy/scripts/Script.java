@@ -1,4 +1,4 @@
-package com.areebbeigh.proxy.script;
+package com.areebbeigh.prokc.proxy.scripts;
 
 import java.util.regex.Pattern;
 import rawhttp.core.RawHttpRequest;

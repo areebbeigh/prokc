@@ -1,4 +1,4 @@
-package com.areebbeigh.server;
+package com.areebbeigh.prokc.server;
 
 import lombok.Builder;
 import lombok.Getter;

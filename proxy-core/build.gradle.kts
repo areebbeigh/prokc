@@ -15,6 +15,7 @@ dependencies {
     implementation("com.athaydes.rawhttp:rawhttp-core")
     implementation("org.apache.commons:commons-lang3")
     implementation("org.apache.commons:commons-collections4")
+    implementation("org.apache.commons:commons-pool2")
 }
 
 tasks.test {

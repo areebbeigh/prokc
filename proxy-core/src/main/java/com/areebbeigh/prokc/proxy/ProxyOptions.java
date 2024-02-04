@@ -1,6 +1,6 @@
-package com.areebbeigh.proxy;
+package com.areebbeigh.prokc.proxy;
 
-import com.areebbeigh.proxy.script.Script;
+import com.areebbeigh.prokc.proxy.scripts.Script;
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;

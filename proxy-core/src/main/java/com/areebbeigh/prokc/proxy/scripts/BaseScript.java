@@ -1,10 +1,10 @@
-package com.areebbeigh.proxy.script;
+package com.areebbeigh.prokc.proxy.scripts;
 
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class BaseScript<Response> implements Script<Response> {
+public abstract class BaseScript implements Script {
   @Override
   public boolean matches(String host) {
     Pattern pattern = getPattern();

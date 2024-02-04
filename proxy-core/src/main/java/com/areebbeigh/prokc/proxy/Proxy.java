@@ -1,6 +1,6 @@
-package com.areebbeigh.proxy;
+package com.areebbeigh.prokc.proxy;
 
-import com.areebbeigh.server.TCPServer;
+import com.areebbeigh.prokc.server.TCPServer;
 import java.io.IOException;
 
 public class Proxy {

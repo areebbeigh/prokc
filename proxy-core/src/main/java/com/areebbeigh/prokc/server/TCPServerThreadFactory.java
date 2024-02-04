@@ -1,4 +1,4 @@
-package com.areebbeigh.server;
+package com.areebbeigh.prokc.server;
 
 import java.util.concurrent.ThreadFactory;
 import lombok.Getter;
