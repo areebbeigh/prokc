@@ -1,14 +1,23 @@
 package com.areebbeigh.prokc.proxy.remote;
 
 import com.areebbeigh.prokc.common.HTTPSchemes;
+import com.areebbeigh.prokc.proxy.ProxyOptions;
 import java.net.Socket;
 import java.net.URI;
 import javax.net.SocketFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.KeyedPooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 
+@Slf4j
 public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> {
+
+  private final ProxyOptions options;
+
+  public SocketPoolFactory(ProxyOptions options) {
+    this.options = options;
+  }
 
   @Override
   public void activateObject(URI key, PooledObject<Socket> p) throws Exception {
@@ -19,6 +28,7 @@ public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> 
     Socket socket = p.getObject();
 
     if (socket != null) {
+      log.debug("Destroying socket {}", socket);
       socket.close();
     }
   }
@@ -38,6 +48,7 @@ public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> 
 
     // TODO: Upgrade to TLS socket for HTTPS
     Socket socket = SocketFactory.getDefault().createSocket(host, port);
+    socket.setSoTimeout(options.getRemoteSoTimeout());
     return new DefaultPooledObject<>(socket);
   }
 

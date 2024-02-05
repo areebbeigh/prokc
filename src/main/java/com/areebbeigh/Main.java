@@ -13,21 +13,26 @@ import java.net.Socket;
 import java.net.URI;
 import java.util.List;
 import java.util.regex.Pattern;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+import rawhttp.core.EagerHttpResponse;
 import rawhttp.core.RawHttp;
 import rawhttp.core.RawHttpRequest;
 import rawhttp.core.RawHttpResponse;
+import rawhttp.core.body.HttpMessageBody;
+import rawhttp.core.body.StringBody;
 
 public class Main {
 
   public static void main(String[] args) throws IOException, InterruptedException {
+    ProxyOptions options = ProxyOptions.builder().scripts(List.of(new SampleScript())).build();
+
     RawHttp rawHttp = new RawHttp();
     GenericKeyedObjectPool<URI, Socket> connectionPool = new GenericKeyedObjectPool<>(
-        new SocketPoolFactory());
+        new SocketPoolFactory(options));
     RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
 
-    ProxyOptions options = ProxyOptions.builder().scripts(List.of(new SampleScript())).build();
     TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(),
         ClientHandler.create(options, remoteHandler, rawHttp));
     Proxy.create(server, options).start();
@@ -67,9 +72,14 @@ public class Main {
     }
 
     @Override
+    @SneakyThrows
     public RawHttpResponse<?> onResponse(RawHttpResponse<?> response) {
-      log.info("Received response:\n{}", response.toString());
-      return response;
+      EagerHttpResponse<?> readResponse = response.eagerly();
+      String body = readResponse.getBody().get().toString();
+      RawHttpResponse<?> newResponse = readResponse.withBody(
+          new StringBody(body.replace("example", "foobar")));
+      log.info("Received response:\n{}", body);
+      return newResponse;
     }
 
     @Override

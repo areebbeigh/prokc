@@ -10,7 +10,12 @@ import lombok.Getter;
 @Getter
 public class ProxyOptions {
 
+  // Transformers/scripts for requests
   List<Script> scripts;
+
+  // Sockets
+  private int remoteSoTimeout;
+  private int clientSoTimeout;
 
   public static ProxyOptions getDefault() {
     return ProxyOptions.builder()

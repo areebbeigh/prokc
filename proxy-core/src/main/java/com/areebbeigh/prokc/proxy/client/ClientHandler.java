@@ -18,6 +18,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import rawhttp.core.RawHttp;
 import rawhttp.core.RawHttpRequest;
+import rawhttp.core.RawHttpResponse;
 import rawhttp.core.errors.InvalidHttpRequest;
 
 /**
@@ -36,7 +37,8 @@ public class ClientHandler implements TCPConnectionHandler {
     this.rawHttp = rawHttp;
   }
 
-  public static ClientHandler create(ProxyOptions options, RemoteHandler remoteHandler, RawHttp rawHttp) {
+  public static ClientHandler create(ProxyOptions options, RemoteHandler remoteHandler,
+      RawHttp rawHttp) {
     return new ClientHandler(options, remoteHandler, rawHttp);
   }
 
@@ -51,6 +53,7 @@ public class ClientHandler implements TCPConnectionHandler {
   }
 
   private void process(Socket socket) throws IOException {
+    socket.setSoTimeout(options.getClientSoTimeout());
     BufferedInputStream inputStream = new BufferedInputStream(socket.getInputStream());
     BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
     while (!socket.isClosed()) {
@@ -58,7 +61,7 @@ public class ClientHandler implements TCPConnectionHandler {
       try {
         request = rawHttp.parseRequest(inputStream);
       } catch (InvalidHttpRequest e) {
-        log.info("[Client] Closing socket {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
+        log.info("Closing socket {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
         log.debug("Error while parsing request", e);
         inputStream.close();
         outputStream.close();
@@ -78,8 +81,13 @@ public class ClientHandler implements TCPConnectionHandler {
       flow.applyRequestScripts();
       remoteHandler.handle(flow);
       flow.applyResponseScripts();
-      flow.getResponse().writeTo(outputStream);
-      outputStream.flush();
+      RawHttpResponse response = flow.getResponse();
+      if (response != null) {
+        response.writeTo(outputStream);
+        outputStream.flush();
+      } else {
+        // TODO: Write error to client?
+      }
     }
   }
 
