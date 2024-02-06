@@ -49,6 +49,7 @@ public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> 
     // TODO: Upgrade to TLS socket for HTTPS
     Socket socket = SocketFactory.getDefault().createSocket(host, port);
     socket.setSoTimeout(options.getRemoteSoTimeout());
+    socket.setKeepAlive(true);
     return new DefaultPooledObject<>(socket);
   }
 

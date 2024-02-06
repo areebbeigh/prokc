@@ -47,12 +47,12 @@ public class ClientHandler implements TCPConnectionHandler {
     log.info("[Client] New connection {}", socket.getRemoteSocketAddress());
     try {
       process(socket);
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void process(Socket socket) throws IOException {
+  private void process(Socket socket) throws Exception {
     socket.setSoTimeout(options.getClientSoTimeout());
     BufferedInputStream inputStream = new BufferedInputStream(socket.getInputStream());
     BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
@@ -61,7 +61,8 @@ public class ClientHandler implements TCPConnectionHandler {
       try {
         request = rawHttp.parseRequest(inputStream);
       } catch (InvalidHttpRequest e) {
-        log.info("Closing socket {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
+        log.info("Closing socket {}: {} {}", socket.getRemoteSocketAddress(),
+            e.getClass().getName(), e.getMessage());
         log.debug("Error while parsing request", e);
         inputStream.close();
         outputStream.close();

@@ -29,12 +29,13 @@ public class RemoteHandler {
     return new RemoteHandler(rawHttp, socketPool);
   }
 
-  public void handle(Flow flow) {
+  public void handle(Flow flow) throws Exception {
     RawHttpRequest request = flow.getRequest();
     URI uri = request.getUri();
     Socket socket = null;
     try {
       socket = socketPool.borrowObject(uri);
+      log.debug("Borrowed socket {} from connection pool", socket);
       InputStream inputStream = new BufferedInputStream(socket.getInputStream());
       OutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
       request.writeTo(outputStream);
@@ -42,10 +43,11 @@ public class RemoteHandler {
       flow.setResponse(rawHttp.parseResponse(inputStream));
       socketPool.returnObject(uri, socket);
     } catch (Exception e) {
-      log.info("Closing remote socket: {} - {}", uri, e.getMessage());
-      log.debug("Remote send exception {}", uri, e);
+      log.info("Closing remote socket: {} - {} {}", uri, e.getClass().getName(), e.getMessage());
+      log.debug("Remote socket exception {}", uri, e);
       if (socket != null)
         close(uri, socket);
+      throw e;
     }
   }
 

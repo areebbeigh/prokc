@@ -11,6 +11,7 @@ import com.areebbeigh.prokc.server.TCPServerOptions;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
@@ -18,9 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import rawhttp.core.EagerHttpResponse;
 import rawhttp.core.RawHttp;
+import rawhttp.core.RawHttpHeaders;
 import rawhttp.core.RawHttpRequest;
 import rawhttp.core.RawHttpResponse;
+import rawhttp.core.body.BodyReader;
+import rawhttp.core.body.EagerBodyReader;
 import rawhttp.core.body.HttpMessageBody;
+import rawhttp.core.body.LazyBodyReader;
 import rawhttp.core.body.StringBody;
 
 public class Main {
@@ -31,6 +36,7 @@ public class Main {
     RawHttp rawHttp = new RawHttp();
     GenericKeyedObjectPool<URI, Socket> connectionPool = new GenericKeyedObjectPool<>(
         new SocketPoolFactory(options));
+    connectionPool.setMaxTotalPerKey(50);
     RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
 
     TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(),
@@ -75,10 +81,17 @@ public class Main {
     @SneakyThrows
     public RawHttpResponse<?> onResponse(RawHttpResponse<?> response) {
       EagerHttpResponse<?> readResponse = response.eagerly();
-      String body = readResponse.getBody().get().toString();
-      RawHttpResponse<?> newResponse = readResponse.withBody(
-          new StringBody(body.replace("example", "foobar")));
-      log.info("Received response:\n{}", body);
+      EagerBodyReader bodyReader = readResponse.getBody().get();
+      String body = bodyReader.decodeBodyToString(StandardCharsets.UTF_8);
+
+      StringBody newBody = new StringBody(body.replace("example", "example1"));
+
+      RawHttpResponse<?> newResponse = new RawHttpResponse<>(readResponse.getLibResponse(),
+          readResponse.getRequest().orElse(null), readResponse.getStartLine(),
+          readResponse.getHeaders().except("Content-Encoding"), newBody.toBodyReader())
+          .withBody(newBody).eagerly();
+
+      log.info("New response:\n{}", newResponse);
       return newResponse;
     }
 
