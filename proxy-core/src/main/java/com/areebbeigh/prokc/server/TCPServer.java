@@ -52,6 +52,7 @@ public class TCPServer {
           log.error("Exception in client socket handler", e);
         } finally {
           close(clientSocket);
+          semaphore.release();
         }
       });
     }

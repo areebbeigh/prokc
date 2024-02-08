@@ -16,6 +16,7 @@ public class ProxyOptions {
   // Sockets
   private int remoteSoTimeout;
   private int clientSoTimeout;
+  private long maxConnectionIdleTimeMillis;
 
   public static ProxyOptions getDefault() {
     return ProxyOptions.builder()

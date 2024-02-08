@@ -38,7 +38,7 @@ public class ClientHandler implements TCPConnectionHandler {
   }
 
   public static ClientHandler create(ProxyOptions options, RemoteHandler remoteHandler,
-      RawHttp rawHttp) {
+                                     RawHttp rawHttp) {
     return new ClientHandler(options, remoteHandler, rawHttp);
   }
 
@@ -62,8 +62,8 @@ public class ClientHandler implements TCPConnectionHandler {
         request = rawHttp.parseRequest(inputStream);
       } catch (InvalidHttpRequest e) {
         log.info("Closing socket {}: {} {}", socket.getRemoteSocketAddress(),
-            e.getClass().getName(), e.getMessage());
-        log.debug("Error while parsing request", e);
+                 e.getClass().getName(), e.getMessage());
+//        log.debug("Error while parsing request", e);
         inputStream.close();
         outputStream.close();
         socket.close();
@@ -76,9 +76,9 @@ public class ClientHandler implements TCPConnectionHandler {
       }
 
       Flow flow = Flow.builder()
-          .request(request)
-          .scripts(getScripts(request))
-          .build();
+                      .request(request)
+                      .scripts(getScripts(request))
+                      .build();
       flow.applyRequestScripts();
       remoteHandler.handle(flow);
       flow.applyResponseScripts();
@@ -87,6 +87,7 @@ public class ClientHandler implements TCPConnectionHandler {
         response.writeTo(outputStream);
         outputStream.flush();
       } else {
+        log.error("Null response for remote call {}", flow);
         // TODO: Write error to client?
       }
     }
@@ -100,7 +101,7 @@ public class ClientHandler implements TCPConnectionHandler {
     List<Script> scripts = ListUtils.emptyIfNull(options.getScripts());
     String path = request.getStartLine().getUri().getRawPath();
     return scripts.stream()
-        .filter(s -> s.matches(path))
-        .collect(Collectors.toList());
+                  .filter(s -> s.matches(path))
+                  .collect(Collectors.toList());
   }
 }

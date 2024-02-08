@@ -14,7 +14,7 @@ public class TCPServerThreadFactory implements ThreadFactory {
   @Override
   public Thread newThread(Runnable r) {
     Thread t = new Thread(r);
-    t.setName("ProkcTCPThread-" + t.getName());
+    t.setName("ProkcTCPHandler-" + t.getName());
     return t;
   }
 }

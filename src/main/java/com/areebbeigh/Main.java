@@ -5,6 +5,7 @@ import com.areebbeigh.prokc.proxy.Proxy;
 import com.areebbeigh.prokc.proxy.ProxyOptions;
 import com.areebbeigh.prokc.proxy.remote.RemoteHandler;
 import com.areebbeigh.prokc.proxy.remote.SocketPoolFactory;
+import com.areebbeigh.prokc.proxy.remote.SocketPoolUtil;
 import com.areebbeigh.prokc.proxy.scripts.BaseScript;
 import com.areebbeigh.prokc.server.TCPServer;
 import com.areebbeigh.prokc.server.TCPServerOptions;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
@@ -31,16 +33,20 @@ import rawhttp.core.body.StringBody;
 public class Main {
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    ProxyOptions options = ProxyOptions.builder().scripts(List.of(new SampleScript())).build();
+    ProxyOptions options = ProxyOptions.builder()
+                                       .scripts(List.of(new SampleScript()))
+                                       .maxConnectionIdleTimeMillis(2000).build();
 
     RawHttp rawHttp = new RawHttp();
     GenericKeyedObjectPool<URI, Socket> connectionPool = new GenericKeyedObjectPool<>(
         new SocketPoolFactory(options));
     connectionPool.setMaxTotalPerKey(50);
+    connectionPool.setDurationBetweenEvictionRuns(Duration.ofMillis(2000));
+    connectionPool.setEvictionPolicy(SocketPoolUtil.getEvictionPolicy(options));
     RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
 
     TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(),
-        ClientHandler.create(options, remoteHandler, rawHttp));
+                                        ClientHandler.create(options, remoteHandler, rawHttp));
     Proxy.create(server, options).start();
 
 //    ServerSocket serverSocket = new ServerSocket(7070);
@@ -87,8 +93,11 @@ public class Main {
       StringBody newBody = new StringBody(body.replace("example", "example1"));
 
       RawHttpResponse<?> newResponse = new RawHttpResponse<>(readResponse.getLibResponse(),
-          readResponse.getRequest().orElse(null), readResponse.getStartLine(),
-          readResponse.getHeaders().except("Content-Encoding"), newBody.toBodyReader())
+                                                             readResponse.getRequest().orElse(null),
+                                                             readResponse.getStartLine(),
+                                                             readResponse.getHeaders().except(
+                                                                 "Content-Encoding"),
+                                                             newBody.toBodyReader())
           .withBody(newBody).eagerly();
 
       log.info("New response:\n{}", newResponse);

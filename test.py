@@ -13,9 +13,9 @@ def make_request():
 
 r = make_request()
 
-req_count = 20
+req_count = 1200
 
 futures = [thread_pool.submit(make_request) for _ in range(req_count)]
 
-for f in futures:
-    print(f.result().status_code)
+for idx, f in enumerate(futures):
+    print(idx, f.result().status_code)
