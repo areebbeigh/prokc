@@ -16,6 +16,7 @@ dependencies {
     implementation("org.apache.commons:commons-lang3")
     implementation("org.apache.commons:commons-collections4")
     implementation("org.apache.commons:commons-pool2")
+    implementation("org.bouncycastle:bcprov-jdk18on")
 }
 
 tasks.test {

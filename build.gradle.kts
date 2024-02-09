@@ -49,6 +49,8 @@ allprojects {
       dependency("org.apache.commons:commons-lang3:3.14.0")
       dependency("org.apache.commons:commons-collections4:4.4")
       dependency("org.apache.commons:commons-pool2:2.12.0")
+
+        dependency("org.bouncycastle:bcprov-jdk18on:1.77")
     }
   }
 
