@@ -6,14 +6,14 @@ import java.io.IOException;
 public class Proxy {
 
   private final TCPServer server;
-  private final ProxyOptions options;
+  private final ProxyConfiguration options;
 
-  private Proxy(TCPServer server, ProxyOptions options) {
+  private Proxy(TCPServer server, ProxyConfiguration options) {
     this.server = server;
     this.options = options;
   }
 
-  public static Proxy create(TCPServer server, ProxyOptions options) {
+  public static Proxy create(TCPServer server, ProxyConfiguration options) {
     return new Proxy(server, options);
   }
 

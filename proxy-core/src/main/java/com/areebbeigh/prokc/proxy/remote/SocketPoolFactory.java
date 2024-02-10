@@ -1,7 +1,7 @@
 package com.areebbeigh.prokc.proxy.remote;
 
 import com.areebbeigh.prokc.common.HTTPSchemes;
-import com.areebbeigh.prokc.proxy.ProxyOptions;
+import com.areebbeigh.prokc.proxy.ProxyConfiguration;
 import java.net.Socket;
 import java.net.URI;
 import javax.net.SocketFactory;
@@ -13,9 +13,9 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 @Slf4j
 public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> {
 
-  private final ProxyOptions options;
+  private final ProxyConfiguration options;
 
-  public SocketPoolFactory(ProxyOptions options) {
+  public SocketPoolFactory(ProxyConfiguration options) {
     this.options = options;
   }
 

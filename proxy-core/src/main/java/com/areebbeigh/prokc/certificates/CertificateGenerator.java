@@ -1,11 +1,14 @@
 package com.areebbeigh.prokc.certificates;
 
+import com.areebbeigh.prokc.certificates.pojo.RootCACertificate;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -19,6 +22,9 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class CertificateGenerator {
@@ -26,11 +32,11 @@ public class CertificateGenerator {
   public static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
 
   public X509Certificate createCARootCertificate(KeyPair keyPair)
-      throws CertificateException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException {
+      throws CertificateException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException, IOException {
     X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
 
     X500Principal issuer = new X500Principal(
-        "CN=Prokc CA,OU=Prokc Certification Authority,O=prokc.io,C=US");
+        "CN=Prokc Root CA,OU=Prokc Certification Authority,O=Prokc,C=US");
 
     // DN and Serial Number
     generator.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
@@ -53,7 +59,7 @@ public class CertificateGenerator {
     generator.addExtension(
         Extension.subjectKeyIdentifier,
         false,
-        SubjectKeyIdentifier.getInstance(keyPair.getPublic().getEncoded())
+        createSubjectKeyIdentifier(keyPair.getPublic())
     );
     generator.addExtension(
         Extension.basicConstraints,
@@ -62,8 +68,8 @@ public class CertificateGenerator {
     );
     generator.addExtension(
         Extension.keyUsage,
-        false,
-        new KeyUsage(KeyUsage.cRLSign | KeyUsage.keyCertSign)
+        true,
+        new KeyUsage(KeyUsage.cRLSign | KeyUsage.keyCertSign | KeyUsage.digitalSignature)
     );
 
     // Extended usage
@@ -80,7 +86,12 @@ public class CertificateGenerator {
     return certificate;
   }
 
-  public X509Certificate createServerCertificate(X509Certificate caCert, PrivateKey privateKey) {
+  private SubjectPublicKeyInfo createSubjectKeyIdentifier(PublicKey publicKey) throws IOException {
+    return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
+        PublicKeyFactory.createKey(publicKey.getEncoded()));
+  }
+
+  public X509Certificate createServerCertificate(RootCACertificate caCert, String host) {
     throw new NotImplementedException();
   }
 }

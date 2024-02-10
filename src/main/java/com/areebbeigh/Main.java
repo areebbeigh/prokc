@@ -1,8 +1,11 @@
 package com.areebbeigh;
 
+import com.areebbeigh.prokc.certificates.CertificateGenerator;
+import com.areebbeigh.prokc.certificates.CertificateManager;
+import com.areebbeigh.prokc.certificates.KeyStoreManager;
 import com.areebbeigh.prokc.proxy.client.ClientHandler;
 import com.areebbeigh.prokc.proxy.Proxy;
-import com.areebbeigh.prokc.proxy.ProxyOptions;
+import com.areebbeigh.prokc.proxy.ProxyConfiguration;
 import com.areebbeigh.prokc.proxy.remote.RemoteHandler;
 import com.areebbeigh.prokc.proxy.remote.SocketPoolFactory;
 import com.areebbeigh.prokc.proxy.remote.SocketPoolUtil;
@@ -13,6 +16,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -21,33 +29,47 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import rawhttp.core.EagerHttpResponse;
 import rawhttp.core.RawHttp;
-import rawhttp.core.RawHttpHeaders;
 import rawhttp.core.RawHttpRequest;
 import rawhttp.core.RawHttpResponse;
-import rawhttp.core.body.BodyReader;
 import rawhttp.core.body.EagerBodyReader;
-import rawhttp.core.body.HttpMessageBody;
-import rawhttp.core.body.LazyBodyReader;
 import rawhttp.core.body.StringBody;
 
 public class Main {
 
-  public static void main(String[] args) throws IOException, InterruptedException {
-    ProxyOptions options = ProxyOptions.builder()
-                                       .scripts(List.of(new SampleScript()))
-                                       .maxConnectionIdleTimeMillis(2000).build();
+  public static void main(String[] args)
+      throws IOException, InterruptedException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    // TODO: Move out init and config to utility classes/properties files
+    // Configuration
+    ProxyConfiguration config = ProxyConfiguration.builder()
+                                                   .scripts(List.of(new SampleScript()))
+                                                   .maxConnectionIdleTimeMillis(2000)
+                                                   .keyStorePath(
+                                                       Paths.get(System.getProperty("user.home"),
+                                                                 ".prokc/prokc.keystore"))
+                                                   .build();
 
+    // Certificate manager
+    CertificateGenerator certGenerator = new CertificateGenerator();
+    KeyStoreManager keyStoreManager = new KeyStoreManager(config);
+    CertificateManager certificateManager = new CertificateManager(certGenerator, keyStoreManager);
+
+    // HTTP Parser
     RawHttp rawHttp = new RawHttp();
+
+    // Socket pool
     GenericKeyedObjectPool<URI, Socket> connectionPool = new GenericKeyedObjectPool<>(
-        new SocketPoolFactory(options));
+        new SocketPoolFactory(config));
     connectionPool.setMaxTotalPerKey(50);
     connectionPool.setDurationBetweenEvictionRuns(Duration.ofMillis(2000));
-    connectionPool.setEvictionPolicy(SocketPoolUtil.getEvictionPolicy(options));
-    RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
+    connectionPool.setEvictionPolicy(SocketPoolUtil.getEvictionPolicy(config));
 
-    TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(),
-                                        ClientHandler.create(options, remoteHandler, rawHttp));
-    Proxy.create(server, options).start();
+    // Handlers
+    RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
+    ClientHandler clientHandler = new ClientHandler(rawHttp, config, remoteHandler, certificateManager);
+
+    // Server
+    TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(), clientHandler);
+    Proxy.create(server, config).start();
 
 //    ServerSocket serverSocket = new ServerSocket(7070);
 //

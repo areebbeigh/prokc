@@ -1,6 +1,6 @@
 package com.areebbeigh.prokc.proxy.remote;
 
-import com.areebbeigh.prokc.proxy.ProxyOptions;
+import com.areebbeigh.prokc.proxy.ProxyConfiguration;
 import java.net.Socket;
 import java.time.Instant;
 import lombok.experimental.UtilityClass;
@@ -11,7 +11,7 @@ import org.apache.commons.pool2.impl.EvictionPolicy;
 @Slf4j
 public class SocketPoolUtil {
 
-  public static EvictionPolicy<Socket> getEvictionPolicy(ProxyOptions options) {
+  public static EvictionPolicy<Socket> getEvictionPolicy(ProxyConfiguration options) {
     return (config, object, idleCount) -> {
       boolean evict =
           Instant.now().toEpochMilli() - object.getLastUsedInstant().toEpochMilli()

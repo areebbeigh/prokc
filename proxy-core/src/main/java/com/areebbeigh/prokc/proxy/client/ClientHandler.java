@@ -1,7 +1,9 @@
 package com.areebbeigh.prokc.proxy.client;
 
+import com.areebbeigh.prokc.certificates.CertificateManager;
+import com.areebbeigh.prokc.common.HTTPMethod;
 import com.areebbeigh.prokc.proxy.Flow;
-import com.areebbeigh.prokc.proxy.ProxyOptions;
+import com.areebbeigh.prokc.proxy.ProxyConfiguration;
 import com.areebbeigh.prokc.proxy.remote.RemoteHandler;
 import com.areebbeigh.prokc.proxy.scripts.Script;
 import com.areebbeigh.prokc.server.TCPConnectionHandler;
@@ -9,12 +11,23 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.UnrecoverableEntryException;
+import java.security.cert.CertificateException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import rawhttp.core.RawHttp;
 import rawhttp.core.RawHttpRequest;
@@ -25,22 +38,15 @@ import rawhttp.core.errors.InvalidHttpRequest;
  * Handles client to proxy interactions.
  */
 @Slf4j
+@RequiredArgsConstructor
 public class ClientHandler implements TCPConnectionHandler {
 
+  private static final String SSL_PROTOCOL = "TLSv1.2";
+
   private final RawHttp rawHttp;
-  private final ProxyOptions options;
+  private final ProxyConfiguration config;
   private final RemoteHandler remoteHandler;
-
-  private ClientHandler(ProxyOptions options, RemoteHandler remoteHandler, RawHttp rawHttp) {
-    this.options = options;
-    this.remoteHandler = remoteHandler;
-    this.rawHttp = rawHttp;
-  }
-
-  public static ClientHandler create(ProxyOptions options, RemoteHandler remoteHandler,
-                                     RawHttp rawHttp) {
-    return new ClientHandler(options, remoteHandler, rawHttp);
-  }
+  private final CertificateManager certificateManager;
 
   @Override
   public void handle(Socket socket) {
@@ -53,9 +59,10 @@ public class ClientHandler implements TCPConnectionHandler {
   }
 
   private void process(Socket socket) throws Exception {
-    socket.setSoTimeout(options.getClientSoTimeout());
-    BufferedInputStream inputStream = new BufferedInputStream(socket.getInputStream());
-    BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
+    socket.setSoTimeout(config.getClientSoTimeout());
+    var inputStream = new BufferedInputStream(socket.getInputStream());
+    var outputStream = new BufferedOutputStream(socket.getOutputStream());
+
     while (!socket.isClosed()) {
       RawHttpRequest request;
       try {
@@ -63,34 +70,57 @@ public class ClientHandler implements TCPConnectionHandler {
       } catch (InvalidHttpRequest e) {
         log.info("Closing socket {}: {} {}", socket.getRemoteSocketAddress(),
                  e.getClass().getName(), e.getMessage());
-//        log.debug("Error while parsing request", e);
+        log.debug("Error while parsing request", e);
         inputStream.close();
         outputStream.close();
         socket.close();
         return;
       }
 
-      if (StringUtils.equals(request.getMethod(), "CONNECT")) {
-        // TODO: Handle HTTPS here
-        throw new NotImplementedException("TLS not implemented");
+      if (StringUtils.equalsIgnoreCase(request.getMethod(), HTTPMethod.CONNECT.name())) {
+        socket = upgradeToSSLSocket(socket, request);
+        var response = rawHttp.parseResponse("HTTP/1.1 200 Connection established");
+        writeResponse(outputStream, response);
+      } else {
+        var flow = Flow.builder()
+                       .request(request)
+                       .scripts(getScripts(request))
+                       .build();
+
+        flow.applyRequestScripts();
+        remoteHandler.handle(flow);
+        flow.applyResponseScripts();
+
+        var response = flow.getResponse();
+        if (response != null) {
+          writeResponse(outputStream, response);
+        } else {
+          log.error("Null response for remote call {}", flow);
+          // TODO: Write error to client?
+        }
       }
 
-      Flow flow = Flow.builder()
-                      .request(request)
-                      .scripts(getScripts(request))
-                      .build();
-      flow.applyRequestScripts();
-      remoteHandler.handle(flow);
-      flow.applyResponseScripts();
-      RawHttpResponse response = flow.getResponse();
-      if (response != null) {
-        response.writeTo(outputStream);
-        outputStream.flush();
-      } else {
-        log.error("Null response for remote call {}", flow);
-        // TODO: Write error to client?
-      }
     }
+  }
+
+  private void writeResponse(BufferedOutputStream outputStream, RawHttpResponse response)
+      throws IOException {
+    response.writeTo(outputStream);
+    outputStream.flush();
+  }
+
+  private SSLSocket upgradeToSSLSocket(Socket socket, RawHttpRequest request)
+      throws KeyStoreException, CertificateException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException, IOException, UnrecoverableEntryException, KeyManagementException {
+    String host = request.getStartLine().getUri().getHost();
+    certificateManager.addX509CertToTrustStore(host);
+    // TODO: Look into re-using SSL context/factory in all client handlers
+    SSLContext sslContext = SSLContext.getInstance(SSL_PROTOCOL);
+    sslContext.init(certificateManager.getX509KeyManagerFactory().getKeyManagers(), null, null);
+    SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+    SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(socket, null, socket.getPort(),
+                                                                 true);
+    sslSocket.setUseClientMode(false);
+    return sslSocket;
   }
 
   private List<Script> getScripts(RawHttpRequest request) {
@@ -98,10 +128,12 @@ public class ClientHandler implements TCPConnectionHandler {
       return Collections.emptyList();
     }
 
-    List<Script> scripts = ListUtils.emptyIfNull(options.getScripts());
+    List<Script> scripts = ListUtils.emptyIfNull(config.getScripts());
     String path = request.getStartLine().getUri().getRawPath();
     return scripts.stream()
                   .filter(s -> s.matches(path))
                   .collect(Collectors.toList());
   }
+
+
 }

@@ -1,6 +1,7 @@
 package com.areebbeigh.prokc.proxy;
 
 import com.areebbeigh.prokc.proxy.scripts.Script;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
@@ -8,7 +9,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class ProxyOptions {
+public class ProxyConfiguration {
 
   // Transformers/scripts for requests
   List<Script> scripts;
@@ -18,9 +19,6 @@ public class ProxyOptions {
   private int clientSoTimeout;
   private long maxConnectionIdleTimeMillis;
 
-  public static ProxyOptions getDefault() {
-    return ProxyOptions.builder()
-        .scripts(Collections.emptyList())
-        .build();
-  }
+  // Certificate management
+  private Path keyStorePath;
 }
