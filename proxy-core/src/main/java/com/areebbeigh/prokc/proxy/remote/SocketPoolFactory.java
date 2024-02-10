@@ -25,7 +25,7 @@ public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> 
 
   @Override
   public void destroyObject(URI key, PooledObject<Socket> p) throws Exception {
-    Socket socket = p.getObject();
+    var socket = p.getObject();
 
     if (socket != null) {
       log.debug("Destroying socket {}", socket);
@@ -47,7 +47,7 @@ public class SocketPoolFactory implements KeyedPooledObjectFactory<URI, Socket> 
     }
 
     // TODO: Upgrade to TLS socket for HTTPS
-    Socket socket = SocketFactory.getDefault().createSocket(host, port);
+    var socket = SocketFactory.getDefault().createSocket(host, port);
     socket.setSoTimeout(options.getRemoteSoTimeout());
     socket.setKeepAlive(true);
     return new DefaultPooledObject<>(socket);

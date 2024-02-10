@@ -3,9 +3,9 @@ package com.areebbeigh;
 import com.areebbeigh.prokc.certificates.CertificateGenerator;
 import com.areebbeigh.prokc.certificates.CertificateManager;
 import com.areebbeigh.prokc.certificates.KeyStoreManager;
-import com.areebbeigh.prokc.proxy.client.ClientHandler;
 import com.areebbeigh.prokc.proxy.Proxy;
 import com.areebbeigh.prokc.proxy.ProxyConfiguration;
+import com.areebbeigh.prokc.proxy.client.ClientHandler;
 import com.areebbeigh.prokc.proxy.remote.RemoteHandler;
 import com.areebbeigh.prokc.proxy.remote.SocketPoolFactory;
 import com.areebbeigh.prokc.proxy.remote.SocketPoolUtil;
@@ -13,11 +13,8 @@ import com.areebbeigh.prokc.proxy.scripts.BaseScript;
 import com.areebbeigh.prokc.server.TCPServer;
 import com.areebbeigh.prokc.server.TCPServerOptions;
 import java.io.IOException;
-import java.net.Socket;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -40,60 +37,32 @@ public class Main {
       throws IOException, InterruptedException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
     // TODO: Move out init and config to utility classes/properties files
     // Configuration
-    ProxyConfiguration config = ProxyConfiguration.builder()
-                                                   .scripts(List.of(new SampleScript()))
-                                                   .maxConnectionIdleTimeMillis(2000)
-                                                   .keyStorePath(
-                                                       Paths.get(System.getProperty("user.home"),
-                                                                 ".prokc/prokc.keystore"))
-                                                   .build();
+    var config = ProxyConfiguration.builder().scripts(List.of(new SampleScript()))
+                                   .maxConnectionIdleTimeMillis(2000).keyStorePath(
+            Paths.get(System.getProperty("user.home"), ".prokc/prokc.keystore")).build();
 
     // Certificate manager
-    CertificateGenerator certGenerator = new CertificateGenerator();
-    KeyStoreManager keyStoreManager = new KeyStoreManager(config);
-    CertificateManager certificateManager = new CertificateManager(certGenerator, keyStoreManager);
+    var certGenerator = new CertificateGenerator();
+    var keyStoreManager = new KeyStoreManager(config);
+    var certificateManager = new CertificateManager(certGenerator, keyStoreManager);
 
     // HTTP Parser
-    RawHttp rawHttp = new RawHttp();
+    var rawHttp = new RawHttp();
 
     // Socket pool
-    GenericKeyedObjectPool<URI, Socket> connectionPool = new GenericKeyedObjectPool<>(
-        new SocketPoolFactory(config));
+    var connectionPool = new GenericKeyedObjectPool<>(new SocketPoolFactory(config));
     connectionPool.setMaxTotalPerKey(50);
     connectionPool.setDurationBetweenEvictionRuns(Duration.ofMillis(2000));
     connectionPool.setEvictionPolicy(SocketPoolUtil.getEvictionPolicy(config));
 
     // Handlers
-    RemoteHandler remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
-    ClientHandler clientHandler = new ClientHandler(rawHttp, config, remoteHandler, certificateManager);
+    var remoteHandler = RemoteHandler.create(rawHttp, connectionPool);
+    var clientHandler = new ClientHandler(rawHttp, config, remoteHandler, certificateManager);
 
     // Server
-    TCPServer server = TCPServer.create(7070, TCPServerOptions.getDefault(), clientHandler);
+    var server = TCPServer.create(7070, TCPServerOptions.getDefault(), clientHandler);
     Proxy.create(server, config).start();
 
-//    ServerSocket serverSocket = new ServerSocket(7070);
-//
-//    while (true) {
-//      Socket accept = serverSocket.accept();
-//      accept.setSoTimeout(10000);
-//      RawHttp rawHttp = new RawHttp();
-//      while (!accept.isClosed()) {
-//        try {
-//          System.out.println("Reading request");
-//          RawHttpRequest rawHttpRequest = rawHttp.parseRequest(accept.getInputStream()).eagerly();
-//          rawHttpRequest.writeTo(System.out);
-//          rawHttp.parseResponse("HTTP/1.1 200 OK\\r\\n").writeTo(accept.getOutputStream());
-//          Thread.sleep(10000);
-//        } catch (SocketException e) {
-//          System.out.println("\n SOCKET EXCEPTION: " + e.getMessage());
-//          accept.close();
-//        } catch (Exception e) {
-//          System.out.println(
-//              "\nError while reading input: " + e.getClass().getName() + " " + e.getMessage());
-//          accept.close();
-//        }
-//      }
-//    }
   }
 
   @Slf4j
@@ -110,17 +79,17 @@ public class Main {
     public RawHttpResponse<?> onResponse(RawHttpResponse<?> response) {
       EagerHttpResponse<?> readResponse = response.eagerly();
       EagerBodyReader bodyReader = readResponse.getBody().get();
-      String body = bodyReader.decodeBodyToString(StandardCharsets.UTF_8);
+      var body = bodyReader.decodeBodyToString(StandardCharsets.UTF_8);
 
-      StringBody newBody = new StringBody(body.replace("example", "example1"));
+      var newBody = new StringBody(body.replace("example", "example1"));
 
-      RawHttpResponse<?> newResponse = new RawHttpResponse<>(readResponse.getLibResponse(),
-                                                             readResponse.getRequest().orElse(null),
-                                                             readResponse.getStartLine(),
-                                                             readResponse.getHeaders().except(
-                                                                 "Content-Encoding"),
-                                                             newBody.toBodyReader())
-          .withBody(newBody).eagerly();
+      var newResponse = new RawHttpResponse<>(readResponse.getLibResponse(),
+                                              readResponse.getRequest().orElse(null),
+                                              readResponse.getStartLine(),
+                                              readResponse.getHeaders().except(
+                                                  "Content-Encoding"),
+                                              newBody.toBodyReader()).withBody(
+          newBody).eagerly();
 
       log.info("New response:\n{}", newResponse);
       return newResponse;

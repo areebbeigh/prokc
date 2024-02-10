@@ -91,7 +91,7 @@ public class ClientHandler implements TCPConnectionHandler {
         remoteHandler.handle(flow);
         flow.applyResponseScripts();
 
-        var response = flow.getResponse();
+        RawHttpResponse response = flow.getResponse();
         if (response != null) {
           writeResponse(outputStream, response);
         } else {
@@ -111,14 +111,14 @@ public class ClientHandler implements TCPConnectionHandler {
 
   private SSLSocket upgradeToSSLSocket(Socket socket, RawHttpRequest request)
       throws KeyStoreException, CertificateException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException, IOException, UnrecoverableEntryException, KeyManagementException {
-    String host = request.getStartLine().getUri().getHost();
+    var host = request.getStartLine().getUri().getHost();
     certificateManager.addX509CertToTrustStore(host);
     // TODO: Look into re-using SSL context/factory in all client handlers
-    SSLContext sslContext = SSLContext.getInstance(SSL_PROTOCOL);
+    var sslContext = SSLContext.getInstance(SSL_PROTOCOL);
     sslContext.init(certificateManager.getX509KeyManagerFactory().getKeyManagers(), null, null);
-    SSLSocketFactory socketFactory = sslContext.getSocketFactory();
-    SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(socket, null, socket.getPort(),
-                                                                 true);
+    var socketFactory = sslContext.getSocketFactory();
+    var sslSocket = (SSLSocket) socketFactory.createSocket(socket, null, socket.getPort(),
+                                                           true);
     sslSocket.setUseClientMode(false);
     return sslSocket;
   }
@@ -128,8 +128,8 @@ public class ClientHandler implements TCPConnectionHandler {
       return Collections.emptyList();
     }
 
-    List<Script> scripts = ListUtils.emptyIfNull(config.getScripts());
-    String path = request.getStartLine().getUri().getRawPath();
+    var scripts = ListUtils.emptyIfNull(config.getScripts());
+    var path = request.getStartLine().getUri().getRawPath();
     return scripts.stream()
                   .filter(s -> s.matches(path))
                   .collect(Collectors.toList());

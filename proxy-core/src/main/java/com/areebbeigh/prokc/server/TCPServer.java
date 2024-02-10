@@ -18,7 +18,7 @@ public class TCPServer {
   private final TCPServerOptions options;
 
   private TCPServer(ServerSocket socket, TCPServerOptions options,
-      TCPConnectionHandler connectionHandler) {
+                    TCPConnectionHandler connectionHandler) {
     this.options = options;
     this.executor = createThreadPool();
     this.socket = socket;
@@ -28,7 +28,7 @@ public class TCPServer {
   public static TCPServer create(int port, TCPServerOptions options, TCPConnectionHandler handler) {
     try {
       return new TCPServer(ServerSocketFactory.getDefault().createServerSocket(port), options,
-          handler);
+                           handler);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -39,12 +39,12 @@ public class TCPServer {
   }
 
   public void listen() throws IOException, InterruptedException {
-    Semaphore semaphore = new Semaphore(options.getMaxConnections());
+    var semaphore = new Semaphore(options.getMaxConnections());
 
     while (!socket.isClosed()) {
       semaphore.acquire();
 
-      Socket clientSocket = socket.accept();
+      var clientSocket = socket.accept();
       executor.submit(() -> {
         try {
           handler.handle(clientSocket);

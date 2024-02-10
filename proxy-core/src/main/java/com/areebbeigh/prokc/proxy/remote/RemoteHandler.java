@@ -36,8 +36,8 @@ public class RemoteHandler {
     try {
       socket = socketPool.borrowObject(uri);
       log.debug("Borrowed socket {} from connection pool", socket);
-      InputStream inputStream = new BufferedInputStream(socket.getInputStream());
-      OutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
+      var inputStream = new BufferedInputStream(socket.getInputStream());
+      var outputStream = new BufferedOutputStream(socket.getOutputStream());
       request.writeTo(outputStream);
       outputStream.flush();
       flow.setResponse(rawHttp.parseResponse(inputStream));

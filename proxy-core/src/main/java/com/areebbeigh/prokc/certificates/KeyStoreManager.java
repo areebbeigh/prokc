@@ -36,9 +36,9 @@ public class KeyStoreManager {
 
   private KeyStore initKeyStore()
       throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
-    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-    String keyStorePath = config.getKeyStorePath().toString();
-    File file = new File(keyStorePath);
+    var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    var keyStorePath = config.getKeyStorePath().toString();
+    var file = new File(keyStorePath);
 
     if (file.exists()) {
       try (var storeInputStream = new FileInputStream(file)) {
@@ -61,7 +61,7 @@ public class KeyStoreManager {
       return null;
     }
 
-    PrivateKeyEntry entry = (PrivateKeyEntry) keyStore.getEntry(ROOT_CA_ALIAS, PROTECTION_PARAM);
+    var entry = (PrivateKeyEntry) keyStore.getEntry(ROOT_CA_ALIAS, PROTECTION_PARAM);
     PrivateKey privateKey = entry.getPrivateKey();
     Certificate[] certChain = entry.getCertificateChain();
     return new RootCACertificate(privateKey, (X509Certificate) certChain[0]);
@@ -90,7 +90,7 @@ public class KeyStoreManager {
 
   public KeyManagerFactory getX509KeyManagerFactory() {
     try {
-      KeyManagerFactory factory = KeyManagerFactory.getInstance(X509_ALGORITHM);
+      var factory = KeyManagerFactory.getInstance(X509_ALGORITHM);
       factory.init(keyStore, KEYSTORE_PWD);
       return factory;
     } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException e) {

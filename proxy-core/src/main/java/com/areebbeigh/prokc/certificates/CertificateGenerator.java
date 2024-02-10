@@ -7,7 +7,6 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -21,7 +20,6 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
@@ -33,9 +31,9 @@ public class CertificateGenerator {
 
   public X509Certificate createCARootCertificate(KeyPair keyPair)
       throws CertificateException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException, IOException {
-    X509V3CertificateGenerator generator = new X509V3CertificateGenerator();
+    var generator = new X509V3CertificateGenerator();
 
-    X500Principal issuer = new X500Principal(
+    var issuer = new X500Principal(
         "CN=Prokc Root CA,OU=Prokc Certification Authority,O=Prokc,C=US");
 
     // DN and Serial Number
@@ -44,8 +42,8 @@ public class CertificateGenerator {
     generator.setSubjectDN(issuer);
 
     // Validity
-    long monthsBefore = 12L;
-    long monthsAfter = 24L;
+    var monthsBefore = 12L;
+    var monthsAfter = 24L;
     generator.setNotBefore(
         new Date(System.currentTimeMillis() - (monthsBefore * 30 * 24 * 60 * 60 * 1000)));
     generator.setNotAfter(
@@ -73,7 +71,7 @@ public class CertificateGenerator {
     );
 
     // Extended usage
-    ASN1EncodableVector purposes = new ASN1EncodableVector();
+    var purposes = new ASN1EncodableVector();
     purposes.add(KeyPurposeId.id_kp_serverAuth);
     purposes.add(KeyPurposeId.id_kp_clientAuth);
     purposes.add(KeyPurposeId.anyExtendedKeyUsage);
