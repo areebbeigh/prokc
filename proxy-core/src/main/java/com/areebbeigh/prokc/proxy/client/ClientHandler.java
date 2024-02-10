@@ -78,9 +78,9 @@ public class ClientHandler implements TCPConnectionHandler {
       }
 
       if (StringUtils.equalsIgnoreCase(request.getMethod(), HTTPMethod.CONNECT.name())) {
-        socket = upgradeToSSLSocket(socket, request);
         var response = rawHttp.parseResponse("HTTP/1.1 200 Connection established");
         writeResponse(outputStream, response);
+        socket = upgradeToSSLSocket(socket, request);
       } else {
         var flow = Flow.builder()
                        .request(request)
@@ -120,6 +120,10 @@ public class ClientHandler implements TCPConnectionHandler {
     var sslSocket = (SSLSocket) socketFactory.createSocket(socket, null, socket.getPort(),
                                                            true);
     sslSocket.setUseClientMode(false);
+    log.debug("Starting SSL handshake");
+    sslSocket.startHandshake();
+    log.debug("SSL handshake done");
+    sslSocket.addHandshakeCompletedListener((e) -> log.info("Handshake completed {}", e));
     return sslSocket;
   }
 

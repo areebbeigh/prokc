@@ -20,5 +20,6 @@ public class ProxyConfiguration {
   private long maxConnectionIdleTimeMillis;
 
   // Certificate management
+  private Path rootCAPath;
   private Path keyStorePath;
 }

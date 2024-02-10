@@ -49,8 +49,9 @@ allprojects {
       dependency("org.apache.commons:commons-lang3:3.14.0")
       dependency("org.apache.commons:commons-collections4:4.4")
       dependency("org.apache.commons:commons-pool2:2.12.0")
-
-        dependency("org.bouncycastle:bcprov-jdk18on:1.77")
+      dependency("org.bouncycastle:bcprov-jdk18on:1.77")
+      dependency("org.bouncycastle:bcpkix-jdk18on:1.77")
+      dependency("org.bouncycastle:bctls-jdk18on:1.77")
     }
   }
 
@@ -62,5 +63,8 @@ allprojects {
 dependencies {
   implementation("com.athaydes.rawhttp:rawhttp-core")
   implementation("org.apache.commons:commons-pool2")
+  implementation("org.bouncycastle:bcprov-jdk18on")
+  implementation("org.bouncycastle:bcpkix-jdk18on")
+  implementation("org.bouncycastle:bctls-jdk18on")
   implementation(project(":proxy-core"))
 }
