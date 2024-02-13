@@ -3,7 +3,6 @@ package com.areebbeigh;
 import com.areebbeigh.prokc.certificates.CertificateGenerator;
 import com.areebbeigh.prokc.certificates.CertificateManager;
 import com.areebbeigh.prokc.certificates.KeyStoreManager;
-import com.areebbeigh.prokc.certificates.util.KeyUtils;
 import com.areebbeigh.prokc.proxy.Proxy;
 import com.areebbeigh.prokc.proxy.ProxyConfiguration;
 import com.areebbeigh.prokc.proxy.client.ClientHandler;
@@ -13,33 +12,19 @@ import com.areebbeigh.prokc.proxy.remote.SocketPoolUtil;
 import com.areebbeigh.prokc.proxy.scripts.BaseScript;
 import com.areebbeigh.prokc.server.TCPServer;
 import com.areebbeigh.prokc.server.TCPServerOptions;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HexFormat;
-import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import rawhttp.core.EagerHttpResponse;
 import rawhttp.core.RawHttp;
 import rawhttp.core.RawHttpRequest;
@@ -76,14 +61,14 @@ public class Main {
     Path dir = Paths.get(home, ".prokc");
     var config = ProxyConfiguration.builder().scripts(List.of(new SampleScript()))
                                    .maxConnectionIdleTimeMillis(2000)
-                                   .keyStorePath(Paths.get(dir.toString(), "prokc.keystore"))
-                                   .rootCAPath(Paths.get(dir.toString(), "ProkcRootCA.pem"))
+                                   .keyStoresDir(Paths.get(dir.toString()))
+                                   .rootCAFilePath(Paths.get(dir.toString(), "ProkcRootCA.pem"))
                                    .build();
 
     // Certificate manager
-    var certGenerator = new CertificateGenerator(new org.bouncycastle.cert.bc.BcX509ExtensionUtils());
-    var keyStoreManager = new KeyStoreManager(config);
-    var certificateManager = new CertificateManager(certGenerator, keyStoreManager, config);
+    var certGenerator = new CertificateGenerator(
+        new org.bouncycastle.cert.bc.BcX509ExtensionUtils());
+    var certificateManager = new CertificateManager(certGenerator, config);
 
     // HTTP Parser
     var rawHttp = new RawHttp();

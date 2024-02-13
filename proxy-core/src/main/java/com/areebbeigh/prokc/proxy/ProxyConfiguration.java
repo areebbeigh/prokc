@@ -2,7 +2,6 @@ package com.areebbeigh.prokc.proxy;
 
 import com.areebbeigh.prokc.proxy.scripts.Script;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +19,6 @@ public class ProxyConfiguration {
   private long maxConnectionIdleTimeMillis;
 
   // Certificate management
-  private Path rootCAPath;
-  private Path keyStorePath;
+  private Path rootCAFilePath;
+  private Path keyStoresDir;
 }

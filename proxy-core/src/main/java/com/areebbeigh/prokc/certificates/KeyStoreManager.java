@@ -1,11 +1,12 @@
 package com.areebbeigh.prokc.certificates;
 
 import com.areebbeigh.prokc.certificates.pojo.CertificateAndKey;
-import com.areebbeigh.prokc.proxy.ProxyConfiguration;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
 import java.security.KeyStore.PrivateKeyEntry;
@@ -24,22 +25,21 @@ public class KeyStoreManager {
   private static final String X509_ALGORITHM = "SunX509";
   private static final char[] KEYSTORE_PWD = "".toCharArray();
   private static final PasswordProtection PROTECTION_PARAM = new PasswordProtection(KEYSTORE_PWD);
-  private final ProxyConfiguration config;
   private final KeyStore keyStore;
+  private final Path keyStorePath;
 
-  public KeyStoreManager(ProxyConfiguration config)
+  public KeyStoreManager(Path keyStorePath)
       throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-    this.config = config;
+    this.keyStorePath = keyStorePath;
     this.keyStore = initKeyStore();
   }
 
   private KeyStore initKeyStore()
       throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
     var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-    var keyStorePath = config.getKeyStorePath().toString();
-    var file = new File(keyStorePath);
 
-    if (file.exists()) {
+    if (keyStorePath != null && Files.exists(keyStorePath)) {
+      var file = keyStorePath.toFile();
       try (var storeInputStream = new FileInputStream(file)) {
         keyStore.load(storeInputStream, KEYSTORE_PWD);
       }
@@ -86,8 +86,12 @@ public class KeyStoreManager {
 
   private void saveKeyStore()
       throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-    try (var os = new FileOutputStream(config.getKeyStorePath().toString())) {
+    if (keyStorePath == null)
+      return;
+
+    try (var os = new FileOutputStream(keyStorePath.toFile())) {
       keyStore.store(os, KEYSTORE_PWD);
+      os.flush();
     }
   }
 }

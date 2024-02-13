@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -113,9 +114,9 @@ public class ClientHandler implements TCPConnectionHandler {
       throws KeyStoreException, CertificateException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException, IOException, UnrecoverableEntryException, KeyManagementException {
     var host = request.getStartLine().getUri().getHost();
     certificateManager.addX509CertToTrustStore(host);
-    // TODO: Look into re-using SSL context/factory in all client handlers
     var sslContext = SSLContext.getInstance(SSL_PROTOCOL);
-    sslContext.init(certificateManager.getX509KeyManagerFactory().getKeyManagers(), null, null);
+//    var tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    sslContext.init(certificateManager.getX509KeyManagerFactory(host).getKeyManagers(), null, null);
     var socketFactory = sslContext.getSocketFactory();
     var sslSocket = (SSLSocket) socketFactory.createSocket(socket, null, socket.getPort(),
                                                            true);

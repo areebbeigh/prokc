@@ -66,7 +66,7 @@ public class CertificateGenerator {
     generator.addExtension(Extension.subjectKeyIdentifier, false,
                            x509ExtensionUtils.createSubjectKeyIdentifier(
                                toAsymmetricKeyParameter(keyPair.getPublic())));
-    generator.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
+    generator.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
     generator.addExtension(Extension.keyUsage, true, new KeyUsage(
         KeyUsage.cRLSign | KeyUsage.keyCertSign | KeyUsage.digitalSignature));
 
@@ -91,7 +91,7 @@ public class CertificateGenerator {
 
     // Subject, Issuer DN and Serial no.
     generator.setSerialNumber(randomSerialNumber());
-    generator.setSubjectDN(new X500Principal("CN=%s".formatted(host)));
+    generator.setSubjectDN(new X500Principal("CN=%s,O=%s,C=US".formatted(host,host)));
     generator.setIssuerDN(caCert.certificate().getSubjectX500Principal());
 
     // Public key, sign algorithm
@@ -103,7 +103,7 @@ public class CertificateGenerator {
     generator.setNotBefore(NOT_BEFORE);
 
     // Extensions
-    generator.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+//    generator.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
     generator.addExtension(Extension.subjectKeyIdentifier, false,
                            SubjectPublicKeyInfo.getInstance(serverPublicKey.getEncoded()));
     generator.addExtension(Extension.authorityKeyIdentifier, false,
@@ -116,7 +116,7 @@ public class CertificateGenerator {
     purposes.add(KeyPurposeId.id_kp_clientAuth);
     purposes.add(KeyPurposeId.id_kp_nsSGC);
     purposes.add(KeyPurposeId.id_kp_msSGC);
-    generator.addExtension(Extension.extendedKeyUsage, false, new DERSequence(purposes));
+//    generator.addExtension(Extension.extendedKeyUsage, false, new DERSequence(purposes));
 
     X509Certificate certificate = generator.generate(caCert.privateKey());
     certificate.checkValidity(new Date());
